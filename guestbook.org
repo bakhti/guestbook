@@ -1,0 +1,33 @@
+#+TITLE:  GuestBook AWS infrastructure
+#+AUTHOR: Bakhti Aripov
+#+TAGS:   askCharlie guestbook
+
+
+* Networking
+
+I would suggest to have a separate VPC for our guestbook. We can use RDS for PostgreSQL database
+and ElasticCache for Redis in one subnetwork. Web instances can be created in autoscaling group
+in two or more other subnetworks for reliability. Requests would be balanced between them using
+ELB, the only entry point from outside.
+
+#+ATTR_HTML: :width 80% :alt guestbook
+[[file://cloudcraft_guestbook.png]]
+
+* Deployment
+
+Wherever we keep our source code - github or bitbucket, we can also keep it in CodeCommit and
+make CodePipeline to watch a particular git branch, and trigger CodeDeploy when new features
+are merged to that branch to update the application on instances.
+CodePipeline could also trigger other jobs, like testing and building the code, that could be
+archived and saved in S3 bucket. Keeping pre-built application on S3 would speed the deployment
+process up.
+
+* Optimization
+
+The whole enviroment can be described in CloudFormation templates. I would create one separate
+CloudFormation stack for VPC, subnets with route tables, ACLs and security groups. Another
+for RDS and ElastiCache. And the third one for autoscaling group with ELB. This would allow
+to easily duplicate autoscaling group if we need to run several different releases of our
+application.
+This would also allow us to put 2 autoscaling groups behind one load balancer, with one 
+on-demand instance per AZ in one and several spot instances in another for cost optimization.

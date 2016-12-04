@@ -1,0 +1,64 @@
+---
+- name: apt specific tasks
+  include: Debian.yml
+  when: ansible_os_family == 'Debian'
+  become: true
+
+- name: yum specific tasks
+  include: RedHat.yml
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'Amazon'
+  become: true
+
+- name: rbenv repository cloned
+  git:
+    repo={{ rbenv_repo_path }}
+    dest={{ rbenv_root_path }}
+    update=no
+    version={{ rbenv_version }}
+
+- name: rbenv init file is in system-wide profile
+  template:
+    src=rbenv.sh.j2
+    dest=/etc/profile.d/rbenv.sh
+    owner=root
+    group=root
+    mode=0755
+  become: true
+
+- name: Makefile to build dynamic bash extension
+  command: src/configure
+  args:
+    chdir: "{{ rbenv_root_path }}"
+    creates: "{{ rbenv_root_path }}/src/Makefile"
+
+- name: dynamic bash extension is built
+  command:  make -C src
+  args:
+    chdir: "{{ rbenv_root_path }}"
+    creates: "{{ rbenv_root_path }}/libexec/rbenv-realpath.dylib"
+
+- name: ruby-build plugin is available
+  git:
+    repo=https://github.com/sstephenson/ruby-build.git
+    dest={{ rbenv_root_path }}/plugins/ruby-build
+    update=no
+
+- name: Available Ruby versions
+  command: "{{ rbenv_root_path }}/bin/rbenv versions"
+  changed_when: false
+  ignore_errors: true
+  register: ruby_available_version
+
+- name: Current Ruby version
+  command: "{{ rbenv_root_path }}/bin/rbenv global"
+  changed_when: false
+  register: ruby_global_version
+
+- name: Required ruby version installed
+  command: "{{ rbenv_root_path }}/bin/rbenv install {{ rbenv_ruby_version }}"
+  when: ruby_available_version|failed or ruby_available_version.stdout.find(rbenv_ruby_version) == -1
+  notify: Rehash rbenv
+
+- name: Set global ruby version
+  command: "{{ rbenv_root_path }}/bin/rbenv global {{ rbenv_ruby_version }}"
+  when: ruby_global_version.stdout.find(rbenv_ruby_version)

@@ -1,0 +1,19 @@
+---
+- name: Install ruby-build dependencies
+  apt:
+    pkg={{ item }}
+    state=present
+  with_items:
+    - git
+    - autoconf
+    - bison
+    - build-essential
+    - libssl-dev
+    - libyaml-dev
+    - libreadline6-dev
+    - zlib1g-dev
+    - libncurses5-dev
+    - libffi-dev
+    - libgdbm3
+    - libgdbm-dev
+    - libpq-dev

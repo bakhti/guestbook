@@ -1,0 +1,19 @@
+---
+- name: Dev Tools group present
+  yum:
+    name="@Development tools"
+    state=present
+
+- name: Other ruby-build yum deps
+  yum:
+    name={{ item }}
+    state=present
+  with_items:
+    - gdbm-devel
+    - git
+    - libffi-devel
+    - libyaml-devel
+    - ncurses-devel
+    - openssl-devel
+    - readline-devel
+    - zlib-devel

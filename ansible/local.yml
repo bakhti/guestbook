@@ -1,0 +1,6 @@
+---
+- hosts: gb_web
+  remote_user: vagrant
+
+  roles:
+    - rbenv
